@@ -22,7 +22,7 @@ import pickle
 
 # GET MAIN AUDIO LIST
 
-musicpath = 'F:\Work\AuPy\FeelMe\\testSet'
+musicpath = 'D:\Work\FeelMe\\testSet'
 inlabels = [f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 inmusic = [musicpath+'\\'+f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 #fts = FE.getFeaturesFromList(inmusic)
@@ -32,16 +32,16 @@ sclabels = ["o","v","^","<",">"]
 for i, l, m in zip(inmusic, inlabels, sclabels):
     y, sr = librosa.load(i)
     y_harmonic, y_percussive = librosa.effects.hpss(y)
-    # harmonic
-    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-    log_S = librosa.logamplitude(S, ref_power=np.max)
-    #C = librosa.feature.chroma_cqt(y=y_percussive, sr=sr)
-    plt.figure()
-    C = librosa.cqt(y, sr=sr)
-    librosa.display.specshow(librosa.amplitude_to_db(C, ref=np.max),sr=sr, x_axis='time', y_axis='cqt_note')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title(l)
-    plt.tight_layout()
+    hop_length = 512
+    #S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+    #log_S = librosa.logamplitude(S, ref_power=np.max)
+    #contrast = librosa.feature.spectral_contrast(S=log_S, sr=sr)
+    #avg_bands = np.mean(contrast, axis=1)
+    onsets_harmonic = librosa.onset.onset_detect(y=y_harmonic,
+                                                 sr=sr,
+                                                 hop_length=hop_length)
+    print(onsets_harmonic.shape)
+    #plt.legend()
 """
 #pickle._dump(fts, open('fts.txt', 'wb+'))
 fts = pickle.load(open('fts.txt', 'rb+'))

@@ -49,13 +49,13 @@ def getFeatures(y, sr):
                                                  hop_length=hop_length)
     contrast = librosa.feature.spectral_contrast(S=log_S, sr=sr)
     avg_bands = np.mean(contrast, axis=1)
-    mean_notes = np.mean(C, axis=1)
+    sum_notes = np.sum(C, axis=1) / C.shape[1] # 0.0-1.0 on ~10 notes intensity through the track. Usually very sharp graph at classical and very smooth and techno and trash.
 
     # Map features
-    fts[0, 0] = tempo
-    fts[0, 1] = tuning
-    fts[0, 2] = onsets_harmonic.__len__()
-    fts[0, 3:6] = mean_notes.argsort()[-3:][::-1]
+    fts[0, 0] = tempo # calculated BPM
+    fts[0, 1] = tuning # calculated tuning
+    fts[0, 2] = onsets_harmonic.__len__() #
+    fts[0, 3:15] = sum_notes # note intensities
 
     return fts
 def saveFeatures(fts, fn='features.txt'):
