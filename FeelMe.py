@@ -17,31 +17,51 @@ import librosa.display
 
 # FOR DEBUG
 import pickle
+import soundfile as sf
 
 # END AUX IMPORTS
 
 # GET MAIN AUDIO LIST
 
-musicpath = 'D:\Work\FeelMe\\testSet'
+musicpath = 'testSet'
 inlabels = [f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 inmusic = [musicpath+'\\'+f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 #fts = FE.getFeaturesFromList(inmusic)
-sclabels = ["o","v","^","<",">"]
 
 
-for i, l, m in zip(inmusic, inlabels, sclabels):
+for i, l in zip(inmusic, inlabels):
     y, sr = librosa.load(i)
     y_harmonic, y_percussive = librosa.effects.hpss(y)
-    hop_length = 512
-    #S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-    #log_S = librosa.logamplitude(S, ref_power=np.max)
-    #contrast = librosa.feature.spectral_contrast(S=log_S, sr=sr)
-    #avg_bands = np.mean(contrast, axis=1)
-    onsets_harmonic = librosa.onset.onset_detect(y=y_harmonic,
-                                                 sr=sr,
-                                                 hop_length=hop_length)
-    print(onsets_harmonic.shape)
-    #plt.legend()
+    #hop_length = 512
+    #tonnetz = librosa.feature.tonnetz(y=y_harmonic, sr=sr)
+
+    cp = np.asarray(y_percussive).reshape(-1)
+    cp = cp[cp.argsort()]
+
+    c = np.asarray(y).reshape(-1)
+    c = c[c.argsort()]
+
+    print("{} : {}".format(l, np.max(c-cp)))
+
+    # percussive*100/full ??
+    # ONSET count / frame count = something like BPM?
+    # count of notes > np.mean of chroma cqt
+    # find a way to compute WUBS
+    """
+    plt.figure()
+    plt.title(l)
+    S = librosa.magphase(librosa.stft(y, window=np.ones, center=False))[0]
+    rms = librosa.feature.rmse(S=S)
+    plt.semilogy(rms.T, label='FULL')
+    S = librosa.magphase(librosa.stft(y=y_percussive, window=np.ones, center=False))[0]
+    rms = librosa.feature.rmse(S=S)
+    plt.semilogy(rms.T, label='Percussive')
+    S = librosa.magphase(librosa.stft(y=y_harmonic, window=np.ones, center=False))[0]
+    rms = librosa.feature.rmse(S=S)
+    plt.semilogy(rms.T, label='Harmonic')
+    plt.legend()
+    """
+
 """
 #pickle._dump(fts, open('fts.txt', 'wb+'))
 fts = pickle.load(open('fts.txt', 'rb+'))

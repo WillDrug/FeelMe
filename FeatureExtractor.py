@@ -39,23 +39,22 @@ def getFeatures(y, sr):
     S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
     # Convert to log scale (dB). Use the peak power as reference.
     log_S = librosa.logamplitude(S, ref_power=np.max)
-    C = librosa.feature.chroma_cqt(y=y_harmonic, sr=sr)
+    C = librosa.feature.chroma_cqt(y=y, sr=sr)
 
     # Calculate features
     tempo, beats = librosa.beat.beat_track(y=y_percussive, sr=sr)
     tuning = librosa.estimate_tuning(y=y_harmonic, sr=sr)
-    onsets_harmonic = librosa.onset.onset_detect(y=y_harmonic,
-                                                 sr=sr,
-                                                 hop_length=hop_length)
-    contrast = librosa.feature.spectral_contrast(S=log_S, sr=sr)
-    avg_bands = np.mean(contrast, axis=1)
-    sum_notes = np.sum(C, axis=1) / C.shape[1] # 0.0-1.0 on ~10 notes intensity through the track. Usually very sharp graph at classical and very smooth and techno and trash.
+    log_S_mean = librosa.logamplitude(S, ref_power=np.mean)
+    contrast = librosa.feature.spectral_contrast(S=log_S_mean, sr=sr)
+    mean_bands = np.mean(contrast, axis=1)
+    mean_notes = np.mean(C, axis=1) # 0.0-1.0 on ~10 notes intensity through the track. Usually very sharp graph at classical and very smooth and techno and trash.
 
     # Map features
     fts[0, 0] = tempo # calculated BPM
     fts[0, 1] = tuning # calculated tuning
-    fts[0, 2] = onsets_harmonic.__len__() #
-    fts[0, 3:15] = sum_notes # note intensities
+    fts[0, 2] = onsets_harmonic.__len__() # @TOFIX
+    fts[0, 3:15] = mean_notes # note intensities
+    fts[0, 16:23] = mean_bands # average calculated on 7 frequency bandwiths (QUETSIONABLE)
 
     return fts
 def saveFeatures(fts, fn='features.txt'):
