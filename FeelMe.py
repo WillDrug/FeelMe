@@ -21,6 +21,8 @@ import soundfile as sf
 # GET MAIN AUDIO LIST
 
 musicpath = 'testSet'
+print(listdir(musicpath))
+exit()
 inlabels = [f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 inmusic = [musicpath+'\\'+f for f in listdir(musicpath) if isfile(join(musicpath, f))]
 #fts = FE.getFeaturesFromList(inmusic)
@@ -28,7 +30,11 @@ inmusic = [musicpath+'\\'+f for f in listdir(musicpath) if isfile(join(musicpath
 print(inlabels)
 exit()
 for i, l in zip(inmusic, inlabels):
-    y, sr = librosa.load(i)
+    try:
+        y, sr = pickle.load(open(l+'.pic', 'rb+'))
+    except FileNotFoundError:
+        y, sr = librosa.load(i)
+        pickle._dump((y, sr), open(l+'.pic', 'wb+'))
     y_harmonic, y_percussive = librosa.effects.hpss(y)
 
     onset_env = librosa.onset.onset_strength(y, sr=sr, aggregate = np.median)
