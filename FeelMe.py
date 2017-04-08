@@ -39,7 +39,9 @@ for i, l in zip(inmusic, inlabels):
 
     y_harmonic, y_percussive = librosa.effects.hpss(y, margin=(1.0, 3.0))
 
-
+    onset_env = librosa.onset.onset_strength(y, sr=sr, aggregate=np.median)
+    tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr)
+    print(l, tempo)
 
     # percussive*100/full ??
     # ONSET count / frame count = something like BPM?
