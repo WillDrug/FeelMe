@@ -1,12 +1,16 @@
 # Librosa for audio
 import librosa
 from audioread import NoBackendError
+
 # And the display module for visualization
 import librosa.display
 import numpy as np
 import pickle
 import sys
 import os
+
+LOG = True
+import progressbar
 
 # FEATURE INITIALIZATION
 
@@ -40,6 +44,7 @@ def normalize_path(PATH):
         path = PATH
     return path
 def create_list():
+    if LOG: print('> Building file list...')
     fls = []
     musicpath = normalize_path(MUSIC_PATH)
     if RECURSIVE:
@@ -52,6 +57,7 @@ def create_list():
         for file in onlyfiles:
             onlyfiles[onlyfiles.index(file)] = musicpath + '\\' + file
         fls.extend(onlyfiles)
+    if LOG: print('> File list built!')
     return fls
 
 def normalize(S):
@@ -63,13 +69,15 @@ def full_norm(S):
     return S
 
 def get_features_from_list(fls):
+    if LOG: bar = progressbar.ProgressBar(max_value=fls.__len__())
     ftlist = np.ndarray((0, FEATURE_COUNT))
     labels = np.ndarray((0, 1))
-    for fl in fls:
+    for fl, barcount in zip(fls, range(1, fls.__len__()+1)):
         ft, label = load_and_extract(fl)
         if ft is not None:
             ftlist = np.vstack((ftlist, ft))
             labels = np.vstack((labels, label))
+        if LOG: bar.update(barcount)
     return ftlist, labels
 
 def load_signal(f, picklepath, cache=False):
@@ -79,17 +87,27 @@ def load_signal(f, picklepath, cache=False):
             pickle._dump((y, sr), open(picklepath + '\\' + os.path.basename(f) + '.pic', 'wb+'))
         return y, sr
     except NoBackendError:
-        print("> NoBackEndError for {}".format(f))
-        return False, False
+        print("> NoBackEndError for {}".format(os.path.basename(f)))
+        pass
+    except EOFError:
+        print("> EOFError for {}".format(os.path.basename(f)))
+        pass
+    return False, False
 def load_and_extract(fl):
     picklepath = normalize_path(PICKLE_PATH)
+    nopickle = False
     try:
         y, sr = pickle.load(open(picklepath + '\\' + os.path.basename(fl) + '.pic', 'rb+'))
     except FileNotFoundError:
-        print("> FileNotFoundError for {}".format(f))
+        nopickle = True
+        pass
+
+    if nopickle:
+        if LOG: print("> FileNotFoundError for {}".format(os.path.basename(fl)))
         y, sr = load_signal(fl, picklepath, CACHE)
         if y==False:
-            return None
+            return None, None
+        if LOG: print("> Handled, loaded {}".format(os.path.basename(fl)))
 
     return extract_features(y, sr, fl)
 
@@ -150,7 +168,7 @@ def save_features(fts, labels):
     except Exception as e:
         print('> Exception occurred while saving stuff: {}'.format(e))
         return False
-def load_features(fname):
+def load_features():
     labels = np.loadtxt(open(FFILE, 'rb'), dtype=str, comments='#', delimiter=',', skiprows=0, usecols=np.arange(0, 1))
     fts = np.atleast_2d(np.loadtxt(open(FFILE, 'rb'), dtype=float, comments='#', delimiter=',', skiprows=0, usecols=np.arange(1, FEATURE_COUNT+1)))
     return labels, fts
